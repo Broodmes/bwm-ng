@@ -9,7 +9,7 @@ class FakeDb {
             city: "San Francisco",
             street: "Main street",
             category: "condo",
-            image: "https://booksync-jerga-prod.s3.amazonaws.com/uploads/rental/image/5/image.jpeg",
+            image: "https://hips.hearstapps.com/hmg-prod.s3.amazonaws.com/images/gettyimages-691047659-1515518661.jpg",
             bedrooms: 4,
             shared: true,
             description: "Very nice apartment in center of the city.",

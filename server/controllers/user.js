@@ -1,52 +1,53 @@
 const User = require('../models/user');
-const mongoosHelpers = require('../helpers/mongoose');
+const {normalizeErrors} = require('../helpers/mongoose');
 const jwt = require('jsonwebtoken');
 const config = require('../config/dev');
 
-exports.auth = function(req,res){
-    const{email,password} = req.body;
-    if (!password|| !email) {
-        return res.status(422).send({errors:[{title: 'data missing', detail: 'provide email and password'}]});
+exports.auth = function (req, res) {
+    const { email, password } = req.body;
+    if (!password || !email) {
+        return res.status(422).send({ errors: [{ title: 'data missing', detail: 'provide email and password' }] });
     }
 
-    User.findOne({email}, function(err, user) {
-       if (err) {
-        return res.status(422).send({errors: mongoosHelpers.normalizeErrors(err.errors)});    
-       }  
+    User.findOne({ email }, function (err, user) {
+        if (err) {
+            return res.status(422).send({ errors: normalizeErrors(err.errors) });
+        }
 
-       if (!user) {
-        return res.status(422).send({errors:[{title: 'invalid User', detail: 'User no exist'}]});
-       }
+        if (!user) {
+            return res.status(422).send({ errors: [{ title: 'invalid User', detail: 'User no exist' }] });
+        }
 
-       if (user.isSamePassword(password)) {
-           const token = jwt.sign({ userId: user.id,
-           username: user.username
-         }, config.SECRET, { expiresIn: '1h' });
+        if (user.isSamePassword(password)) {
+            const token = jwt.sign({
+                userId: user.id,
+                username: user.username
+            }, config.SECRET, { expiresIn: '1h' });
 
-        return res.json(token) 
-       }else {
-        return res.status(422).send({errors:[{title: 'wrong data', detail: 'Wrong email or password'}]});
-       }
+            return res.json(token)
+        } else {
+            return res.status(422).send({ errors: [{ title: 'wrong data', detail: 'Wrong email or password' }] });
+        }
     });
 }
 
-exports.register = function(req,res){
-    const{username,email,password,passwordConfirmation} = req.body;
+exports.register = function (req, res) {
+    const { username, email, password, passwordConfirmation } = req.body;
 
-    if (!password|| !email) {
-        return res.status(422).send({errors:[{title: 'data missing', detail: 'provide email and password'}]});
+    if (!password || !email) {
+        return res.status(422).send({ errors: [{ title: 'data missing', detail: 'provide email and password' }] });
     }
 
     if (password !== passwordConfirmation) {
-        return res.status(422).send({errors:[{title: 'invalid password', detail: 'password not same as confirmation'}]});
+        return res.status(422).send({ errors: [{ title: 'invalid password', detail: 'password not same as confirmation' }] });
     }
 
-    User.findOne({email: email}, function(err,existingUser){
+    User.findOne({ email: email }, function (err, existingUser) {
         if (err) {
-            return res.status(422).send({'mongoos': 'handle later'});    
+            return res.status(422).send({ 'mongoos': 'handle later' });
         }
         if (existingUser) {
-            return res.status(422).send({errors:[{title: 'invalid email', detail: 'email already exist.'}]});    
+            return res.status(422).send({ errors: [{ title: 'invalid email', detail: 'email already exist.' }] });
         }
 
         const user = new User({
@@ -55,36 +56,36 @@ exports.register = function(req,res){
             password
         });
 
-        user.save(function(err){
+        user.save(function (err) {
             if (err) {
-                return res.status(422).send({errors: mongoosHelpers.normalizeErrors(err.errors)});    
+                return res.status(422).send({ errors: normalizeErrors(err.errors) });
             }
-            return res.json({'registerd':true});
+            return res.json({ 'registerd': true });
         });
     });
 }
 
 
-exports.authMiddleware = function(req, res, next) {
+exports.authMiddleware = function (req, res, next) {
     const token = req.headers.authorization;
 
     if (token) {
         const user = parseToken(token);
 
-        User.findById(user.userId, function(err,user){
+        User.findById(user.userId, function (err, user) {
             if (err) {
-                return res.status(422).send({errors: mongoosHelpers.normalizeErrors(err.errors)});    
+                return res.status(422).send({ errors: normalizeErrors(err.errors) });
             }
 
             if (user) {
                 res.locals.user = user;
                 next();
-            }else {
+            } else {
                 return notAuthorized(res);
             }
         });
 
-    }else {
+    } else {
         return notAuthorized(res);
     }
 }
@@ -95,5 +96,5 @@ function parseToken(token) {
 }
 
 function notAuthorized(res) {
-    return res.status(422).send({errors:[{title: 'not authed', detail: 'you need to login.'}]});   
+    return res.status(422).send({ errors: [{ title: 'not authed', detail: 'you need to login.' }] });
 }
